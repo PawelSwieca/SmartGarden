@@ -1,0 +1,153 @@
+﻿@page "/"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<div class="top-row px-4">
+    
+    <button class="fab" aria-label="Add new garden" data-tooltip="Add new garden" data-bs-toggle="modal" data-bs-target="#exampleModal">+</button>
+</div>
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    @if (gardens == null)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!gardens.Any())
+    {
+        <div class="text-center mt-5">
+            <h3 class="text-muted">You don't have any gardens yet.</h3>
+            <p>Click the + button below to create your first one!</p>
+        </div>
+    }
+    else
+    {
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var garden in gardens)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm garden-card">
+                        <img src="/Pictures/logmenu.jpg" class="card-img-top" alt="Garden cover">
+
+                        <div class="card-body">
+                            
+                            <h5 class="card-title text-success fw-bold">@garden.Name</h5>
+                            <p class="card-text text-muted">A beautiful space waiting to be cultivated.</p>
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0 text-center pb-3">
+                            <button class="btn btn-outline-success w-75" @onclick="() => ManageGarden(garden.Id)">Manage Garden</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Add New Garden</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <EditForm Model="@newGarden" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="gardenName" class="form-label fw-bold">Garden Name</label>
+                            <InputText id="gardenName" class="form-control" @bind-Value="newGarden.Name" placeholder="e.g. My Summer Oasis" />
+                            <ValidationMessage For="@(() => newGarden.Name)" />
+
+                            @if (!string.IsNullOrEmpty(message))
+                            {
+                                <div class="text-danger mt-2 fw-bold">@message</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success px-4">Create Garden</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    public List<Garden>? gardens { get; set; }
+
+    private CreateGardenDTO newGarden { get; set; } = new CreateGardenDTO();
+
+    public string message { get; set; } = string.Empty;
+
+    private async Task HandleValidSubmit()
+    {
+
+        try
+        {
+            var location = await JS.InvokeAsync<LocationResponse>("getLocation");
+            newGarden.Latitude = location.Lat;
+            newGarden.Longitude = location.Lng;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Your location could not be determined: {ex.Message}");
+            newGarden.Latitude = 0; // Default value or handle as needed
+            newGarden.Longitude = 0; // Default value or handle as needed
+        }
+
+        var response = await Http.PostAsJsonAsync("api/garden/add", newGarden);
+        if (response.IsSuccessStatusCode)
+        {
+            // Garden created successfully, refresh the list
+            gardens = await Http.GetFromJsonAsync<List<Garden>>("api/garden/me");
+            StateHasChanged(); // Refresh the UI
+        }
+        else
+        {
+            // Handle error (e.g., show a message to the user)
+            Console.WriteLine("Error creating garden: " + response.ReasonPhrase);
+        }
+    }
+
+    private void ManageGarden(int id)
+    {
+        
+        NavigationManager.NavigateTo($"/gardens/{id}");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            
+            gardens = await Http.GetFromJsonAsync<List<Garden>>("api/garden/me");
+        }
+    }
+
+    private class LocationResponse
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+}

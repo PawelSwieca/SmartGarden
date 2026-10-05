@@ -1,0 +1,46 @@
+﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-container">
+    <header class="top-bar shadow-sm">
+        <div class="header-left">
+            <button class="btn-header" @onclick='() => Navigation.NavigateTo("/summary")'>
+                <i class="bi bi-bar-chart-fill me-2"></i> Summary
+            </button>
+        </div>
+
+        <div class="header-center">
+            <h1 class="app-title">SmartGarden</h1>
+        </div>
+
+        <div class="header-right">
+            <button class="btn-header logout-btn" @onclick="HandleLogout">
+                Logout <i class="bi bi-box-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="content-area">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private async Task HandleLogout()
+    {
+        await Http.PostAsync("api/user/logout", null);
+
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        customAuthStateProvider.MarkUserAsLoggedOut();
+
+        Navigation.NavigateTo("/login");
+    }
+}

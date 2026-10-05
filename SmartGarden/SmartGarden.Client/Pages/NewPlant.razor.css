@@ -1,0 +1,208 @@
+/* CSS for NewPlant component */
+
+.add-plant-wrapper {
+    padding: 3rem 1rem;
+    min-height: 80vh;
+    padding: 3rem; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fff9;
+    border-radius: 20px;
+}
+
+.plant-card {
+    width: 100%;
+    max-width: 650px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(46, 125, 50, 0.15) !important;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%) !important;
+}
+
+.fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- CUSTOM DROPDOWN (ul/li) --- */
+.custom-dropdown-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* G³ówny przycisk udaj¹cy selecta */
+.dropdown-display {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    background-color: #ffffff;
+    user-select: none;
+}
+
+    .dropdown-display.focused {
+        border-color: #4caf50;
+        box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.15);
+    }
+
+.dropdown-icon {
+    transition: transform 0.3s ease;
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+    .dropdown-icon.rotated {
+        transform: rotate(180deg);
+    }
+
+.dropdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99;
+}
+
+.custom-dropdown-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    border: 2px solid #4caf50;
+    border-radius: 12px;
+    padding: 0.5rem;
+    margin: 0;
+    list-style: none;
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    animation: slideDown 0.2s ease-out forwards;
+}
+
+.custom-dropdown-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background-color 0.2s, color 0.2s;
+    color: #333;
+}
+
+    .custom-dropdown-item:hover {
+        background-color: #e8f5e9;
+        color: #1b5e20;
+    }
+
+    .custom-dropdown-item.selected {
+        background-color: #c8e6c9;
+        color: #1b5e20;
+        font-weight: bold;
+    }
+
+.custom-dropdown-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-dropdown-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.custom-dropdown-list::-webkit-scrollbar-thumb {
+    background: #a5d6a7;
+    border-radius: 10px;
+}
+
+    .custom-dropdown-list::-webkit-scrollbar-thumb:hover {
+        background: #81c784;
+    }
+
+
+@keyframes slideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.custom-input {
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-size: 1.15rem;
+    color: #333;
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+}
+
+.input-group > .custom-input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.input-group-text {
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    font-size: 1.15rem;
+}
+
+.custom-input:focus{
+    border-color: #4caf50;
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.15);
+    outline: none;
+}
+
+
+::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+    ::-webkit-calendar-picker-indicator:hover {
+        background: #e8f5e9;
+    }
+
+
+.add-btn {
+    padding: 1rem 2rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .add-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+    }
+
+    .add-btn:active {
+        transform: translateY(0);
+    }

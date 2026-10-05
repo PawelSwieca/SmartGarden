@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SmartGarden.Shared/SmartGarden.Shared.csproj" Id="dced2c4a-af34-4501-8627-b410b815dce2" />
+  <Project Path="SmartGarden/SmartGarden.Client/SmartGarden.Client.csproj" />
+  <Project Path="SmartGarden/SmartGarden/SmartGarden.csproj" />
+</Solution>

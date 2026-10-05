@@ -1,0 +1,97 @@
+﻿@page "/register"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@layout AuthLayout
+@using SmartGarden.Shared.DTOs
+
+<div id="register-page">
+    <h2 id="register-title">Create an account</h2>
+    <h3>Fill in your details below</h3>
+
+    <EditForm id="register-form" Model="registerModel" OnValidSubmit="HandleRegister">
+        <DataAnnotationsValidator />
+
+        <div class="input-container">
+            <label>Username:</label>
+            <InputText class="form-control" @bind-Value="registerModel.Username" placeholder="Username" />
+            <ValidationMessage For="@(() => registerModel.Username)" class="text-danger" />
+        </div>
+
+        <div class="input-container">
+            <label>Nickname:</label>
+            <InputText class="form-control" @bind-Value="registerModel.Nickname" placeholder="Nickname" />
+            <ValidationMessage For="@(() => registerModel.Nickname)" class="text-danger" />
+        </div>
+
+        <div class="input-container">
+            <label>Email:</label>
+            <InputText type="email" class="form-control" @bind-Value="registerModel.Email" placeholder="Email" />
+            <ValidationMessage For="@(() => registerModel.Email)" class="text-danger" />
+        </div>
+
+        <div class="input-container">
+            <label>Password:</label>
+            <InputText type="password" class="form-control" @bind-Value="registerModel.Password" placeholder="Password" />
+            <ValidationMessage For="@(() => registerModel.Password)" class="text-danger" />
+        </div>
+
+        <div class="input-container">
+            <label>Confirm Password:</label>
+            <InputText type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword" placeholder="Confirm Password" />
+            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="text-danger" />
+        </div>
+
+        <button type="submit" id="register-button" disabled="@isSubmitting">Create Account!</button>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div id="message" class="text-danger mt-2">@message</div>
+        }
+    </EditForm>
+</div>
+
+@code {
+
+    private RegisterDTO registerModel = new RegisterDTO();
+    private string message = string.Empty;
+    private bool isSubmitting = false;
+
+    private async Task HandleRegister()
+    {
+        isSubmitting = true;
+        message = string.Empty;
+
+        try
+        {
+            var location = await JS.InvokeAsync<LocationResponse>("getLocation");
+            registerModel.Latitude = location.Lat;
+            registerModel.Longitude = location.Lng;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Nie udało się pobrać lokalizacji: {ex.Message}");       
+        }
+
+        var response = await Http.PostAsJsonAsync("api/user/register", registerModel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Registration successful! You can now log in.";
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            message = await response.Content.ReadAsStringAsync();
+        }
+
+        isSubmitting = false;
+    }
+
+    private class LocationResponse
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+
+}

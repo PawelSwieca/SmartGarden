@@ -1,0 +1,159 @@
+/* --- GŁÓWNY KONTENER I NAGŁÓWKI (Tu nic nie zmieniamy, to zwykłe tagi HTML) --- */
+#register-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    padding: 60px 20px;
+    width: 100%;
+    min-height: 100vh;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+    #register-page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url('/Pictures/logmenu.jpg');
+        background-size: cover;
+        background-position: center;
+        filter: blur(8px);
+        transform: scale(1.05);
+        z-index: -1;
+    }
+
+    #register-page > * {
+        position: relative;
+        z-index: 1;
+    }
+
+#register-title {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: white;
+}
+
+#register-page h3 {
+    text-align: center;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 40px;
+    font-weight: 400;
+}
+
+/* --- FORMULARZ (Zmuszamy Blazora by spenetrował <EditForm>) --- */
+::deep #register-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40%;
+    min-width: 300px;
+}
+
+.input-container {
+    width: 100%;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+    .input-container label {
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        margin-left: 5px;
+    }
+
+/* --- POLA TEKSTOWE (Zmuszamy Blazora by nadpisał <InputText>) --- */
+::deep .form-control {
+    width: 100%;
+    min-height: 80px;
+    border-radius: 10px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    font-size: 18px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: border 0.3s ease, background 0.3s ease;
+}
+
+    ::deep .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    ::deep .form-control:focus {
+        border: 1px solid rgba(76, 255, 0, 0.6) !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+    }
+
+    ::deep .form-control::selection {
+        background: rgba(76, 255, 0, 0.3) !important;
+    }
+
+    /* --- STYLE DLA WALIDACJI BLAZORA --- */
+    ::deep .form-control.invalid {
+        border-color: rgba(255, 76, 76, 0.8) !important;
+    }
+
+        ::deep .form-control.invalid:focus {
+            border-color: rgba(255, 76, 76, 1) !important;
+        }
+
+    ::deep .form-control.modified.valid {
+        border-color: rgba(76, 255, 0, 0.6) !important;
+    }
+
+::deep .validation-message {
+    color: #ff4c4c;
+    font-size: 14px;
+    margin-top: 6px;
+    margin-left: 5px;
+    font-weight: 500;
+}
+
+/* --- PRZYCISK REJESTRACJI --- */
+#register-button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #2e8b57;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s, transform 0.1s;
+}
+
+    #register-button:hover:not(:disabled) {
+        background: #3cb371;
+    }
+
+    #register-button:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+
+    #register-button:disabled {
+        background: rgba(46, 139, 87, 0.5);
+        cursor: not-allowed;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+#message {
+    margin-top: 20px;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-size: 16px;
+}

@@ -1,0 +1,467 @@
+﻿@page "/gardens/{Id:int}"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@using SmartGarden.Shared.Entities
+@using System.Globalization
+
+<div class="top-row px-4">
+    <button class="fab" aria-label="Add new plant" data-tooltip="Add new plant" @onclick='() => NavigationManager.NavigateTo($"/gardens/{Id}/add-plant")'>+</button>
+</div>
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    @if (isLoading)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (garden != null)
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-success fw-bold m-0 text-container">@garden.Name</h2>
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changeNameModal" @onclick=PrepareNameChange>
+                <i class="bi bi-pencil-square"></i>
+                Change Name
+            </button>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-4 mb-4">
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-2">
+                        <iframe class="map-window"
+                                src="@MapUrl"
+                                style="border:0;"
+                                loading="lazy">
+                        </iframe>
+                    </div>
+                </div>
+                @if (weatherData != null)
+                {
+                    <div class="card shadow-sm border-0 bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title opacity-75">Current Weather</h5>
+                            <h1 class="display-4 fw-bold">@weatherData.current.temperature_2m °C</h1>
+                            <p class="mb-0">Humidity: @weatherData.current.relative_humidity_2m %</p>
+                            <p class="mb-0">Rain: @weatherData.current.rain mm</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="col-md-8 mb-4">
+                @if (weatherData != null)
+                {
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-2">
+                            <SfChart Title="3-Day Forecast">
+                                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" Format="dd MMM HH:mm"></ChartPrimaryXAxis>
+                                <ChartPrimaryYAxis Title="Temperature (°C)"></ChartPrimaryYAxis>
+
+                                <ChartAxes>
+                                    <ChartAxis Name="PrecipitationAxis" OpposedPosition="true" Title="Precipitation (mm)"></ChartAxis>
+                                </ChartAxes>
+
+                                <ChartSeriesCollection>
+                                    <ChartSeries DataSource="@ForecastData" XName="Time" YName="Precipitation"
+                                                 Type="ChartSeriesType.Column" YAxisName="PrecipitationAxis" Fill="#87CEEB" Name="Rain">
+                                    </ChartSeries>
+
+                                    <ChartSeries DataSource="@ForecastData" XName="Time" YName="Temperature"
+                                                 Type="ChartSeriesType.Spline" Fill="#FF8C00" Name="Temperature" Width="3">
+                                    </ChartSeries>
+                                </ChartSeriesCollection>
+
+                                <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            </SfChart>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+            <div class="text-container m-0">
+                <h3 class="text-success fw-bold">Plants in this Garden</h3>
+            </div>
+            
+            <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" @onclick="() => handleCreation()">
+                <i class="bi bi-plus-lg me-2"></i> Add Plant
+            </button>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+            @foreach (var plant in Plants)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 @GetCardBackgroundColor(plant)">
+
+                        <div class="card-header border-0 text-center text-white @GetSpeciesHeaderColor(plant.Species)">
+                            <i class="@GetSpeciesIcon(plant.Species) display-4 mt-2 mb-2 d-block"></i>
+                            <h4 class="mb-1 fw-bold">@plant.PlantName</h4>
+                            <span class="badge bg-light text-dark mb-2">@plant.Species</span>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between text-muted small mb-1">
+                                    <span><i class="bi bi-calendar-event"></i> Planted</span>
+                                    <span>Harvest <i class="bi bi-calendar-check"></i></span>
+                                </div>
+                                <div class="progress" style="height: 20px; border-radius: 5px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                         role="progressbar"
+                                         style="width: @GetGrowthProgress(plant)%;">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted small mt-1">
+                                    <span>@plant.PlantingDate.ToString("dd.MM.yyyy")</span>
+                                    <span class="fw-bold">@plant.EstimatedHarvestDate.ToString("dd.MM.yyyy")</span>
+                                </div>
+                            </div>
+
+                            <p class="card-text mb-2"><i class="bi bi-rulers text-secondary me-2"></i> Area: <strong>@plant.Area m²</strong></p>
+
+                            <p class="card-text mb-2">
+                                <i class="bi bi-droplet-half text-info me-2"></i> Water Status:
+                                @if (IsWatered(plant))
+                                {
+                                    <span class="badge text-bg-success">Watered</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-danger">Needs Water</span>
+                                }
+                            </p>
+
+                            @if (plant.IsHarvested)
+                            {
+                                <p class="card-text mb-2 text-success fw-bold"><i class="bi bi-check-circle-fill me-2"></i> Harvested</p>
+                                @if (plant.HarvestAmount > 0)
+                                {
+                                    <p class="card-text mb-0 text-primary fw-bold"><i class="bi bi-basket-fill me-2"></i> Yield: @plant.HarvestAmount kg</p>
+                                }
+                            }
+                            else
+                            {
+                                <p class="card-text mb-2 text-warning fw-bold"><i class="bi bi-hourglass-split me-2"></i> Growing...</p>
+                            }
+                            <button type="button" class="btn btn-inspect" data-bs-toggle="modal" data-bs-target="#inspectPlant" @onclick="() => InspectPlant(plant)">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="changeNameModal" tabindex="-1" aria-labelledby="changeNameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <EditForm Model="updateNameDto" OnValidSubmit="ChangeGardenName">
+                <DataAnnotationsValidator />
+
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5">Change Garden Name</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <InputText @bind-Value="updateNameDto.Name" class="form-control" placeholder="Enter new garden name" />
+                    <ValidationMessage For="@(() => updateNameDto.Name)" class="text-danger mt-1" />
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save changes</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inspectPlant" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="inspectPlantLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <EditForm Model="updatePlantDto" OnValidSubmit="SavePlantInspection">
+                <DataAnnotationsValidator />
+
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Inspect Plant: @inspectedPlant?.PlantName</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3 text-muted">
+                        <small>Planted on: @inspectedPlant?.PlantingDate.ToString("dd.MM.yyyy")</small><br />
+                        <small>Est. Harvest: @inspectedPlant?.EstimatedHarvestDate.ToString("dd.MM.yyyy")</small>
+                    </div>
+                    <div class="mb-4 d-flex justify-content-between align-items-center bg-light p-3 rounded border">
+                        <div>
+                            <i class="bi bi-droplet-fill text-info fs-4 me-2"></i>
+                            <strong>Last Watered:</strong>
+                            @(inspectedPlant == null || inspectedPlant.LastWateredDate == DateTime.MinValue ? "Never" : inspectedPlant.LastWateredDate.ToString("dd.MM.yyyy"))
+                        </div>
+                        <button type="button" class="btn btn-outline-info btn-sm fw-bold" @onclick="WaterPlantAsync">
+                            Water Now
+                        </button>
+                    </div>
+
+                    <hr />
+                    <div class="form-check form-switch mb-3">
+                        <InputCheckbox class="form-check-input" role="switch" id="switchCheckChecked"
+                                       @bind-Value="updatePlantDto.IsHarvested" />
+                        <label class="form-check-label fw-bold" for="switchCheckChecked">Mark as Harvested</label>
+                    </div>
+
+                    <label class="form-label text-muted">Harvest Yield (kg/psc)</label>
+                    <div class="input-group mb-1">
+                        <span class="input-group-text"><i class="bi bi-basket"></i></span>
+                        <InputNumber class="form-control"
+                                     @bind-Value="updatePlantDto.HarvestAmount"
+                                     disabled="@(!updatePlantDto.IsHarvested)" />
+                    </div>
+                    <ValidationMessage For="@(() => updatePlantDto.HarvestAmount)" class="text-danger" />
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    // Zmieniamy na nullable (?) żeby móc łatwo sprawdzać czy dane już są
+    public Garden? garden;
+
+    // Dodajemy flagę ładowania
+    private bool isLoading = true;
+
+    private PlantCropDTO? inspectedPlant;
+
+    private InspectPlantDTO updatePlantDto = new();
+
+    private string MapUrl =>
+    $"https://www.google.com/maps?q={garden!.Latitude.ToString(CultureInfo.InvariantCulture)},{garden.Longitude.ToString(CultureInfo.InvariantCulture)}&z=18&output=embed";
+
+    private string WeatherUrl => $"https://api.open-meteo.com/v1/forecast?latitude={garden!.Latitude.ToString(CultureInfo.InvariantCulture)}&longitude={garden.Longitude.ToString(CultureInfo.InvariantCulture)}&hourly=temperature_2m,precipitation,relative_humidity_2m,precipitation_probability&current=temperature_2m,relative_humidity_2m,rain&forecast_days=3";
+
+    private WeatherData? weatherData;
+
+    public List<ChartPoint> ForecastData { get; set; } = new();
+
+    public List<PlantCropDTO> Plants { get; set; } = new();
+
+    private UpdateGardenNameDTO updateNameDto = new();
+
+    // Używamy OnParametersSetAsync aby mieć pewność, że parametr trasy (Id) został ustawiony
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine($"Próbuję pobrać ogród z ID: {Id}");
+
+        try
+        {
+            // Pobieramy dane dla przekazanego Id. Jeśli API zwróci 404, przechwycimy wyjątek
+            garden = await Http.GetFromJsonAsync<Garden>($"api/garden/{Id}");
+
+            using var cleanClient = new HttpClient(); // Tworzymy jednorazowego, czystego klienta
+            weatherData = await cleanClient.GetFromJsonAsync<WeatherData>(WeatherUrl);
+
+            if (weatherData != null && weatherData.hourly.time.Any())
+            {
+                ForecastData = new List<ChartPoint>();
+                for (int i = 0; i < weatherData.hourly.time.Count; i++)
+                {
+                    ForecastData.Add(new ChartPoint
+                    {
+                        Time = weatherData.hourly.time[i], 
+                        Temperature = weatherData.hourly.temperature_2m[i],
+                        Precipitation = weatherData.hourly.precipitation[i]
+                    });
+                }
+            }
+            
+            Plants = await Http.GetFromJsonAsync<List<PlantCropDTO>>($"api/plants/garden/{Id}");
+            
+        }
+        catch (HttpRequestException ex)
+        {
+            if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                NavigationManager.NavigateTo("/gardens");
+                Console.WriteLine($"Garden with ID {Id} not found.");
+            }
+            else
+            {
+                Console.WriteLine($"Wystąpił inny błąd sieci: {ex.Message}");
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetCardBackgroundColor(PlantCropDTO plant)
+    {
+        if (plant.IsHarvested) return "bg-light opacity-75"; 
+
+        int daysAfterHarvest = (DateTime.UtcNow.Date - plant.EstimatedHarvestDate.Date).Days;
+
+        if (daysAfterHarvest >= 1 && daysAfterHarvest <= 4) return "bg-success-subtle"; 
+        if (daysAfterHarvest > 4 && daysAfterHarvest <= 10) return "bg-warning-subtle"; 
+        if (daysAfterHarvest > 10) return "bg-danger-subtle"; 
+
+        return "bg-white"; 
+    }
+
+    private string GetSpeciesIcon(string species)
+    {
+        return species.ToLower() switch
+        {
+            "vegetable" => "bi bi-basket",
+            "fruit" => "bi bi-apple",        
+            "herb" => "bi bi-flower1",       
+            "flower" => "bi bi-flower3",
+            _ => "bi bi-tree"                
+        };
+    }
+
+    private string GetSpeciesHeaderColor(string species)
+    {
+        return species.ToLower() switch
+        {
+            "vegetable" => "bg-success",
+            "fruit" => "bg-danger",     
+            "herb" => "bg-info",        
+            "flower" => "bg-warning",   
+            _ => "bg-secondary"         
+        };
+    }
+
+    private int GetGrowthProgress(PlantCropDTO plant)
+    {
+        if (plant.IsHarvested) return 100;
+
+        double totalDays = (plant.EstimatedHarvestDate - plant.PlantingDate).TotalDays;
+        double daysPassed = (DateTime.UtcNow - plant.PlantingDate).TotalDays;
+
+        if (totalDays <= 0) return 100; 
+
+        int progress = (int)((daysPassed / totalDays) * 100);
+        return Math.Clamp(progress, 0, 100); 
+    }
+
+    private void PrepareNameChange()
+    {
+        if (garden != null)
+        {
+            updateNameDto.Name = garden.Name;
+        }
+    }
+
+    private void InspectPlant(PlantCropDTO plant)
+    {
+        inspectedPlant = plant;
+
+        updatePlantDto = new InspectPlantDTO
+        {
+            IsHarvested = plant.IsHarvested,
+            HarvestAmount = plant.HarvestAmount
+        };
+    }
+
+
+    private async Task ChangeGardenName()
+    {
+        if (garden != null)
+        {
+            var response = await Http.PutAsJsonAsync($"api/garden/{garden.Id}/name", updateNameDto);
+            if (response.IsSuccessStatusCode)
+            {
+                garden.Name = updateNameDto.Name;
+
+                await JS.InvokeVoidAsync("hideModal", "changeNameModal");
+            }
+            else
+            {
+                Console.WriteLine("Failed to change garden name.");
+            }
+        }
+    }
+
+    private async Task SavePlantInspection()
+    {
+        if (inspectedPlant != null)
+        {
+            if (!updatePlantDto.IsHarvested)
+            {
+                updatePlantDto.HarvestAmount = 0;
+            }
+
+            var response = await Http.PutAsJsonAsync($"api/plants/{inspectedPlant.Id}/inspect", updatePlantDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                inspectedPlant.IsHarvested = updatePlantDto.IsHarvested;
+                inspectedPlant.HarvestAmount = updatePlantDto.HarvestAmount;
+
+                await JS.InvokeVoidAsync("hideModal", "inspectPlant");
+            }
+            else
+            {
+                Console.WriteLine("Failed to update plant inspection.");
+            }
+        }
+    }
+
+    private bool IsWatered(PlantCropDTO plant)
+    {
+        if (plant.LastWateredDate == DateTime.MinValue) return false;
+
+        var daysSinceWatered = (DateTime.UtcNow - plant.LastWateredDate).TotalDays;
+        return daysSinceWatered <= 2; ; // Assuming a plant needs watering if it hasn't been watered in the last 2 days
+    }
+
+    private async Task WaterPlantAsync()
+    {
+        if (inspectedPlant != null)
+        {
+            var response = await Http.PutAsync($"api/plants/{inspectedPlant.Id}/water", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                inspectedPlant.LastWateredDate = DateTime.UtcNow;
+            }
+            else
+            {
+                Console.WriteLine("Failed to update watering date.");
+            }
+        }
+    }
+
+    public async Task handleCreation()
+    {
+        NavigationManager.NavigateTo($"/gardens/{Id}/add-plant");
+    }
+
+    public class ChartPoint
+    {
+        public DateTime Time { get; set; }
+        public double Temperature { get; set; }
+        public double Precipitation { get; set; }
+    }
+}

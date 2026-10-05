@@ -1,0 +1,102 @@
+﻿@page "/login"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
+@layout AuthLayout
+
+<PageTitle>Login</PageTitle>
+
+<div id="login-container">
+    <h2>Hello, User!</h2>
+    <input @bind="username" @bind:event="oninput" id="username" autocomplete="off" type="text" placeholder="Username" />
+    <div id="input-container">
+        <input @bind="password" @bind:event="oninput" id="password" type="@((showPassword) ? "text" : "password")" placeholder="Password" />
+        @if (showPassword)
+        {
+            <svg width="21" height="21" fill="currentColor" viewBox="0 0 16 16" @onclick="SwitchPasswordVisibility">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
+            </svg>
+        }
+        else
+        {
+            <svg width="21" height="21" fill="currentColor" viewBox="0 0 16 16" @onclick="SwitchPasswordVisibility">
+                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z" />
+                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829" />
+                <path d="M3.35 5.47q-.27.24-.518.487A13 13 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7 7 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12z" />
+            </svg>
+        }
+    </div>
+    <div id="separator"></div>
+    <div id="options-container">
+        <button class="login-option">Forgot Password?</button>
+        <button class="login-option" @onclick="NavigateToSignup">No account? Sign up!</button>
+    </div>
+    <button id="login-button" @onclick="HandleLogin">Login!</button>
+
+    @if(isLoading){
+    <div class="text-center mt-5">
+            <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    }
+
+    <div id="result-message" style="color: @resultColor">@errorMessage</div>
+</div>
+
+@code {
+    private bool showPassword = false;
+    private bool isLoading = false;
+    private string username = String.Empty, password = String.Empty;
+    private string resultColor = "green";
+    private string errorMessage = String.Empty;
+    void SwitchPasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+
+        try
+        {
+            var loginData = new { Username = username.Trim(), Password = password.Trim() };
+            var response = await Http.PostAsJsonAsync("api/user/login", loginData);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var customauthProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+                customauthProvider.NotifyAuthState();
+
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                var serverError = await response.Content.ReadAsStringAsync();
+
+                resultColor = "red";
+
+                errorMessage = !string.IsNullOrWhiteSpace(serverError)
+                    ? serverError.Split('.')[0]
+                    : "Wystąpił nieznany błąd logowania.";
+
+                throw new Exception(errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Błąd podczas logowania: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    private void NavigateToSignup()
+    {
+        Navigation.NavigateTo("/register");
+    }
+
+}

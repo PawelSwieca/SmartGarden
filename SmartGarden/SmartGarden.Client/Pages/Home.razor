@@ -1,0 +1,33 @@
+﻿@page "/home"
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Home</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Welcome, @nickname</h1>
+        <p>This is the authorized content for @nickname.</p>
+    </Authorized>
+    <NotAuthorized>
+        <a href="/login">Login</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string nickname = string.Empty;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            nickname = user.FindFirst("Nickname")?.Value ?? user.Identity.Name ?? "Nieznajomy";
+        }
+    }
+}

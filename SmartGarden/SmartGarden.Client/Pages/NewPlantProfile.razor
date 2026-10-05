@@ -1,0 +1,178 @@
+﻿@page "/plant-profiles/create"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<div class="profile-wrapper fade-in">
+    <div class="card shadow-lg border-0 profile-card">
+        <div class="card-header bg-dark text-white text-center py-4 border-0 position-relative overflow-hidden">
+            <div class="header-bg-overlay"></div>
+            <i class="bi bi-journal-richtext display-4 mb-2 d-block position-relative"></i>
+            <h2 class="fw-bold mb-0 position-relative">Create Plant Profile</h2>
+            <p class="text-white-50 mb-0 position-relative">Define a new species and its requirements</p>
+        </div>
+
+        <div class="card-body p-5">
+            <EditForm Model="@newPlantProfile" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="plantName" class="form-label fw-bold text-success fs-5">
+                            <i class="bi bi-tag-fill me-2"></i>Plant Name (e.g., Strawberry Tomato)
+                        </label>
+                        <InputText id="plantName" class="form-control form-control-lg custom-input" @bind-Value="newPlantProfile.Name" placeholder="Enter plant name" />
+                        <ValidationMessage For="@(() => newPlantProfile.Name)" class="text-danger mt-1 fw-bold" />
+                    </div>
+
+                    <div class="col-md-6 mb-4 position-relative">
+                        <label class="form-label fw-bold text-success fs-5">
+                            <i class="bi bi-diagram-3-fill me-2"></i>Species
+                        </label>
+
+                        <div class="custom-dropdown-wrapper">
+                            <div class="form-control form-control-lg custom-input dropdown-display @(isDropdownOpen ? "focused" : "")"
+                                 @onclick="ToggleDropdown">
+                                @if (string.IsNullOrEmpty(newPlantProfile.Species))
+                                {
+                                    <span class="text-muted">-- Select Species --</span>
+                                }
+                                else
+                                {
+                                    <span class="fw-bold text-dark">
+                                        🌱 @avaliableSpecies?.FirstOrDefault(p => p.Equals(newPlantProfile.Species))
+                                    </span>
+                                }
+                                <i class="bi bi-chevron-down ms-auto dropdown-icon @(isDropdownOpen ? "rotated" : "")"></i>
+                            </div>
+
+                            <InputText @bind-Value="newPlantProfile.Species" hidden />
+
+                            @if (isDropdownOpen)
+                            {
+                                <div class="dropdown-overlay" @onclick="CloseDropdown"></div>
+                                <ul class="custom-dropdown-list shadow-lg">
+                                    @if (avaliableSpecies != null)
+                                    {
+                                        @foreach (var profile in avaliableSpecies)
+                                        {
+                                            <li class="custom-dropdown-item @(newPlantProfile.Species.Equals(profile) ? "selected" : "")"
+                                                @onclick="() => SelectOption(profile)">
+                                                🌱 @profile
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            }
+                        </div>
+                        <ValidationMessage For="@(() => newPlantProfile.Species)" class="text-danger mt-1 fw-bold" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="plantDescription" class="form-label fw-bold text-success fs-5">
+                        <i class="bi bi-card-text me-2"></i>Detailed Description
+                    </label>
+                    <InputTextArea id="plantDescription" class="form-control custom-input custom-input-area" rows="5" @bind-Value="newPlantProfile.Description" placeholder="Opisz wymagania, wskazówki dotyczące gleby lub uwagi..." />
+                    <ValidationMessage For="@(() => newPlantProfile.Description)" class="text-danger mt-1 fw-bold" />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="plantWateringFrequency" class="form-label fw-bold text-success fs-5">
+                            <i class="bi bi-droplet-fill text-info me-2"></i>Watering Frequency
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <InputNumber id="plantWateringFrequency" class="form-control custom-input" @bind-Value="newPlantProfile.WateringFrequencyDays" />
+                            <span class="input-group-text bg-light fw-bold text-muted border-start-0">days</span>
+                        </div>
+                        <ValidationMessage For="@(() => newPlantProfile.WateringFrequencyDays)" class="text-danger mt-1 fw-bold" />
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label for="plantHarvestDate" class="form-label fw-bold text-success fs-5">
+                            <i class="bi bi-hourglass-split text-warning me-2"></i>Estimated Time to Harvest
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <InputNumber id="plantHarvestDate" class="form-control custom-input" @bind-Value="newPlantProfile.DaysToHarvest" />
+                            <span class="input-group-text bg-light fw-bold text-muted border-start-0">days</span>
+                        </div>
+                        <ValidationMessage For="@(() => newPlantProfile.DaysToHarvest)" class="text-danger mt-1 fw-bold" />
+                    </div>
+                </div>
+
+                <hr class="my-4 text-muted" />
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-dark btn-lg px-5 rounded-pill fw-bold submit-profile-btn" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-save2 me-2"></i> <span>Save Profile</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    public CreatePlantProfileDTO newPlantProfile = new();
+    public ICollection<String>? avaliableSpecies;
+
+    private bool isDropdownOpen = false;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        avaliableSpecies = await Http.GetFromJsonAsync<List<String>>("api/plantprofiles/species");
+    }
+
+    public async Task HandleValidSubmit()
+    {
+        if (isSubmitting) return;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/plantprofiles", newPlantProfile);
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/plant-profiles");
+            }
+            else
+            {
+                Console.WriteLine("Błąd podczas zapisywania profilu.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Wyjątek: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private void CloseDropdown()
+    {
+        isDropdownOpen = false;
+    }
+
+    private void SelectOption(string species)
+    {
+        newPlantProfile.Species = species;
+        isDropdownOpen = false;
+    }
+}

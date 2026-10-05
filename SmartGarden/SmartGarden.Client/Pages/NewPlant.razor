@@ -1,0 +1,149 @@
+﻿@page "/gardens/{GardenId:int}/add-plant"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<div class="add-plant-wrapper fade-in">
+    <div class="card shadow-lg border-0 plant-card">
+        <div class="card-header bg-success text-white text-center py-4 border-0">
+            <i class="bi bi-flower3 display-4 mb-2 d-block"></i>
+            <h2 class="fw-bold mb-0">Plant a New Crop</h2>
+            <p class="text-white-50 mb-0">Select a species and set the dates</p>
+        </div>
+
+        <div class="card-body p-5">
+            <EditForm Model="@newPlant" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="mb-4 position-relative">
+                    <label class="form-label fw-bold text-success fs-5">
+                        <i class="bi bi-card-list me-2"></i>Select a plant
+                    </label>
+
+                    <div class="custom-dropdown-wrapper">
+                        <div class="form-control form-control-lg custom-input dropdown-display @(isDropdownOpen ? "focused" : "")"
+                             @onclick="ToggleDropdown">
+                            @if (newPlant.PlantProfileId == 0)
+                            {
+                                <span class="text-muted">-- Click, to select a plant profile --</span>
+                            }
+                            else
+                            {
+                                <span class="fw-bold text-dark">
+                                    🌱 @availableProfiles?.FirstOrDefault(p => p.Id == newPlant.PlantProfileId)?.Name
+                                </span>
+                            }
+                            <i class="bi bi-chevron-down ms-auto dropdown-icon @(isDropdownOpen ? "rotated" : "")"></i>
+                            <span class="text-success-emphasis" @onclick='() => NavigationManager.NavigateTo("/plant-profiles/create")'>Don't have a suitable profile? Click here to create one.</span>
+                        </div>
+
+                        <InputNumber @bind-Value="newPlant.PlantProfileId" hidden />
+
+
+                        @if (isDropdownOpen)
+                        {
+                            <div class="dropdown-overlay" @onclick="CloseDropdown"></div>
+
+                            <ul class="custom-dropdown-list shadow-lg">
+                                @if (availableProfiles != null)
+                                {
+                                    @foreach (var profile in availableProfiles)
+                                    {
+                                        <li class="custom-dropdown-item @(newPlant.PlantProfileId == profile.Id ? "selected" : "")"
+                                            @onclick="() => SelectOption(profile.Id)">
+                                            🌱 @profile.Name
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        }
+                    </div>
+                    <ValidationMessage For="@(() => newPlant.PlantProfileId)" class="text-danger mt-1 fw-bold" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="plantArea" class="form-label fw-bold text-success fs-5">
+                        <i class="bi bi-arrows-fullscreen me-2"></i>Cultivation area
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <InputNumber id="plantArea" class="form-control custom-input" @bind-Value="newPlant.Area" placeholder="0.00" />
+                        <span class="input-group-text bg-light fw-bold text-muted border-start-0">m²</span>
+                    </div>
+                    <ValidationMessage For="@(() => newPlant.Area)" class="text-danger mt-1 fw-bold" />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="plantPlantingDate" class="form-label fw-bold text-success fs-5">
+                            <i class="bi bi-calendar-plus me-2"></i>Planting Date
+                        </label>
+                        <InputDate id="plantPlantingDate" class="form-control form-control-lg custom-input" @bind-Value="newPlant.PlantingDate" />
+                        <ValidationMessage For="@(() => newPlant.PlantingDate)" class="text-danger mt-1 fw-bold" />
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label for="plantHarvestDate" class="form-label fw-bold text-success fs-5">
+                            <i class="bi bi-calendar-check me-2"></i>Harvest Date
+                        </label>
+                        <InputDate id="plantHarvestDate" class="form-control form-control-lg custom-input" @bind-Value="newPlant.EstimatedHarvestDate" />
+                        <ValidationMessage For="@(() => newPlant.EstimatedHarvestDate)" class="text-danger mt-1 fw-bold" />
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-2 text-center">
+                    <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill fw-bold add-btn">
+                        <i class="bi bi-plus-circle me-2"></i> Zasadź roślinę
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int GardenId { get; set; }
+
+    private List<PlantProfileLookupDTO>? availableProfiles;
+
+    public CreatePlantDTO newPlant { get; set; } = new();
+
+    private bool isDropdownOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableProfiles = await Http.GetFromJsonAsync<List<PlantProfileLookupDTO>>("api/PlantProfiles/lookup");
+    }
+
+    private async Task HandleValidSubmit()
+    {
+
+        newPlant.GardenId = GardenId;
+        var response = await Http.PostAsJsonAsync("api/plants/new", newPlant);
+
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/gardens/{GardenId}");
+        }
+        else
+        {
+            Console.WriteLine("Error adding plant.");
+        }
+    }
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private void CloseDropdown()
+    {
+        isDropdownOpen = false;
+    }
+
+    private void SelectOption(int profileId)
+    {
+        newPlant.PlantProfileId = profileId;
+        isDropdownOpen = false;
+    }
+}
