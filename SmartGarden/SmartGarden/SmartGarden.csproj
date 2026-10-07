@@ -30,7 +30,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Syncfusion.Blazor.Charts" Version="34.2.6" />
+    <PackageReference Include="Syncfusion.Blazor.Charts" Version="35.1.39" />
   </ItemGroup>
 
 </Project>

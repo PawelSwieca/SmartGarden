@@ -18,6 +18,7 @@ builder.Services.AddScoped<IPlantProfileRepository, PlantProfileRepository>();
 
 var connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
 
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         connection,
@@ -81,6 +82,12 @@ app.UseAntiforgery();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/api/config/syncfusion-license", (IConfiguration config) =>
+{
+    var licenseKey = config["Syncfusion:LicenseKey"];
+    return Results.Ok(new { LicenseKey = licenseKey });
+});
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
