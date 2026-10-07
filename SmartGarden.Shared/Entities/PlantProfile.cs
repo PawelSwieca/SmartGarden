@@ -13,14 +13,14 @@ namespace SmartGarden.Shared.Entities
         public int Id { get; private set; }
 
         [Required, MaxLength(100)]
-        public string Name { get; private set; } = string.Empty;
-        public Species Species { get; private set; }
+        public string Name { get; init; } = string.Empty;
+        public Species Species { get; init ; }
 
         [MaxLength(500)]
-        public string Description { get; private set; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
 
-        public int WateringFrequencyDays { get; private set; }
-        public int DaysToHarvest { get; private set; }
+        public int WateringFrequencyDays { get; init; }
+        public int DaysToHarvest { get; init; }
 
         public PlantProfile() { }
 

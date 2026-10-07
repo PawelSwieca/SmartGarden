@@ -19,7 +19,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-4">
                         <label for="plantName" class="form-label fw-bold text-success fs-5">
-                            <i class="bi bi-tag-fill me-2"></i>Plant Name (e.g., Strawberry Tomato)
+                            <i class="bi bi-tag-fill me-2"></i>Plant Name
                         </label>
                         <InputText id="plantName" class="form-control form-control-lg custom-input" @bind-Value="newPlantProfile.Name" placeholder="Enter plant name" />
                         <ValidationMessage For="@(() => newPlantProfile.Name)" class="text-danger mt-1 fw-bold" />
@@ -73,7 +73,7 @@
                     <label for="plantDescription" class="form-label fw-bold text-success fs-5">
                         <i class="bi bi-card-text me-2"></i>Detailed Description
                     </label>
-                    <InputTextArea id="plantDescription" class="form-control custom-input custom-input-area" rows="5" @bind-Value="newPlantProfile.Description" placeholder="Opisz wymagania, wskazówki dotyczące gleby lub uwagi..." />
+                    <InputTextArea id="plantDescription" class="form-control custom-input custom-input-area" rows="5" @bind-Value="newPlantProfile.Description" placeholder="Describe the plant's requirements" />
                     <ValidationMessage For="@(() => newPlantProfile.Description)" class="text-danger mt-1 fw-bold" />
                 </div>
 

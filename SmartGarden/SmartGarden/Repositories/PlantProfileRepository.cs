@@ -8,9 +8,10 @@ namespace SmartGarden.Repositories
         public Task<PlantProfile?> GetPlantProfileByIdAsync(int id);
         public Task<ICollection<PlantProfile>> GetAllPlantProfilesAsync();
         public Task<ICollection<String>> GetPlantProfileNamesAsync();
+        public Task<ICollection<String>> GetAllSpeciesAsync();
         public Task<ICollection<PlantProfile>> GetProfilesBySpeciesAsync(Species species);
         public Task<ICollection<PlantProfile>> SearchProfilesByNameAsync(string searchTerm);
-        public Task AddPlantProfile(PlantProfile plantProfile);
+        public Task<PlantProfile> AddPlantProfile(PlantProfile plantProfile);
         public Task UpdatePlantProfile(PlantProfile plantProfile);
         public Task DeletePlantProfile(PlantProfile plantProfile);
     }
@@ -32,6 +33,15 @@ namespace SmartGarden.Repositories
         public async Task<ICollection<PlantProfile>> GetAllPlantProfilesAsync()
         {
             return await _context.PlantProfiles.AsNoTracking().ToListAsync();
+        }
+        
+        public async Task<ICollection<String>> GetAllSpeciesAsync()
+        {
+            return await _context.PlantProfiles
+                .Select(p => p.Species.ToString())
+                .Distinct()
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<ICollection<String>> GetPlantProfileNamesAsync()
@@ -58,10 +68,11 @@ namespace SmartGarden.Repositories
                 .ToListAsync();
         }
 
-        public async Task AddPlantProfile(PlantProfile plantProfile)
+        public async Task<PlantProfile> AddPlantProfile(PlantProfile plantProfile)
         {
             _context.PlantProfiles.Add(plantProfile);
             await _context.SaveChangesAsync();
+            return plantProfile;
         }
 
         public async Task UpdatePlantProfile(PlantProfile plantProfile)

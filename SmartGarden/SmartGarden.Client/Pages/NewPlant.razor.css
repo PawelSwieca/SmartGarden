@@ -1,7 +1,6 @@
 /* CSS for NewPlant component */
 
 .add-plant-wrapper {
-    padding: 3rem 1rem;
     min-height: 80vh;
     padding: 3rem; 
     display: flex;
@@ -45,7 +44,7 @@
     width: 100%;
 }
 
-/* G³ówny przycisk udaj¹cy selecta */
+/* Gï¿½ï¿½wny przycisk udajï¿½cy selecta */
 .dropdown-display {
     display: flex;
     align-items: center;

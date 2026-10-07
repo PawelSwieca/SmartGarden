@@ -3,10 +3,12 @@
 .profile-wrapper {
     padding: 3rem 1rem;
     min-height: 80vh;
+    padding: 3rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f4f6f8; 
+    background-color: #f8fff9;
+    border-radius: 20px;
 }
 
 .profile-card {
@@ -62,9 +64,7 @@
 
 .input-group-text {
     border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    border-radius: 0 12px 12px 0;
     font-size: 1.15rem;
 }
 
